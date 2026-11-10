@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, Text, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { carregarDados, salvarDados } from './services/armazenamento';
 import { Cabecalho } from './components/Cabecalho';
 import { Menu } from './components/Menu';
@@ -23,22 +23,45 @@ const telasPorPerfil = {
 
 export default function App() {
   const [dados, setDados] = useState(null);
+  const [erroBanco, setErroBanco] = useState(null);
+  const [erroSalvamento, setErroSalvamento] = useState(null);
+  const [tentativa, setTentativa] = useState(0);
   const [usuario, setUsuario] = useState(null);
   const [tela, setTela] = useState('Painel');
 
   useEffect(() => {
-    carregarDados().then(setDados).catch(() => setDados(null));
-  }, []);
+    let ativo = true;
+    setErroBanco(null);
+    carregarDados()
+      .then((resultado) => { if (ativo) setDados(resultado); })
+      .catch((erro) => { if (ativo) setErroBanco(erro); });
+    return () => { ativo = false; };
+  }, [tentativa]);
 
   useEffect(() => {
-    if (dados) salvarDados(dados).catch(() => {});
+    if (!dados) return;
+    salvarDados(dados)
+      .then(() => setErroSalvamento(null))
+      .catch((erro) => setErroSalvamento(erro));
   }, [dados]);
 
   if (!dados) {
     return (
       <SafeAreaView style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.blue} />
-        <Text style={styles.loadingText}>Preparando seu ambiente escolar...</Text>
+        {erroBanco ? (
+          <>
+            <Text style={styles.heading}>Não foi possível abrir os dados locais</Text>
+            <Text style={styles.loadingText}>{erroBanco.message}</Text>
+            <TouchableOpacity onPress={() => setTentativa((valor) => valor + 1)} style={styles.button}>
+              <Text style={styles.buttonText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <ActivityIndicator size="large" color={colors.blue} />
+            <Text style={styles.loadingText}>Preparando seu ambiente escolar...</Text>
+          </>
+        )}
       </SafeAreaView>
     );
   }
@@ -76,9 +99,10 @@ export default function App() {
       <View style={styles.shell}>
         <Cabecalho usuario={usuario} onSair={sair} />
         <Menu telas={telasPorPerfil[usuario.perfil] || telasPorPerfil.Professor} ativa={tela} onSelecionar={setTela} />
+        {erroSalvamento && <Text accessibilityRole="alert" style={{ color: colors.red, paddingHorizontal: 22, paddingTop: 12 }}>Não foi possível salvar neste dispositivo: {erroSalvamento.message}</Text>}
         <ScrollView style={styles.pageScroll} contentContainerStyle={styles.pageContent} keyboardShouldPersistTaps="handled">
           {conteudo}
-          <Text style={styles.footer}>EducaGestão · Ambiente demonstrativo com dados fictícios</Text>
+          <Text style={styles.footer}>EducaGestão · Dados locais neste dispositivo · Ambiente demonstrativo</Text>
         </ScrollView>
       </View>
     </SafeAreaView>
