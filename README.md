@@ -64,6 +64,71 @@ com o SYSEDU.BR. A hospedagem da versão web deve disponibilizar os cabeçalhos
 `Cross-Origin-Embedder-Policy: credentialless` e
 `Cross-Origin-Opener-Policy: same-origin` exigidos pelo SQLite no navegador.
 
+### Como consultar e alterar os dados locais
+
+O arquivo do banco se chama `educagestao.db`. No momento, o app tem uma tabela,
+`estado_aplicacao`, e mantém o conjunto inteiro de dados da escola na coluna
+`dados_json` da linha cujo `id` é `1`. Isso significa que os registros (alunos,
+turmas, chamadas etc.) são campos de um documento JSON, não tabelas separadas.
+O app salva esse documento novamente quando os dados mudam.
+
+No terminal `sqlite3`, liste as tabelas com:
+
+```sql
+.tables
+```
+
+No terminal `sqlite3` ou no editor SQL do **DB Browser for SQLite**, consulte os
+dados com:
+
+```sql
+SELECT id, atualizado_em, json_valid(dados_json) AS json_valido
+FROM estado_aplicacao;
+SELECT json_extract(dados_json, '$.alunos[0].nome') AS primeiro_aluno
+FROM estado_aplicacao;
+```
+
+Uma alteração pequena em uma propriedade pode ser feita com a extensão JSON do
+SQLite:
+
+```sql
+UPDATE estado_aplicacao
+SET dados_json = json_set(dados_json, '$.alunos[0].turma', '4º Ano B'),
+    atualizado_em = datetime('now')
+WHERE id = 1 AND json_valid(dados_json);
+```
+
+Antes de editar:
+
+1. Faça uma cópia do arquivo `educagestao.db`.
+2. Feche o app para que uma versão antiga dos dados em memória não grave por
+   cima da sua alteração.
+3. Execute a alteração e confira o resultado com `SELECT` e `json_valid`.
+4. Abra o app e confirme os dados. Faça as alterações em cópia de teste quando
+   os dados forem importantes.
+
+O caminho do arquivo depende da plataforma: Android e iOS guardam o banco no
+armazenamento privado do app; no navegador, o `expo-sqlite` usa armazenamento
+local do próprio navegador, não um arquivo `.db` visível na pasta do projeto.
+Por isso, o comando SQL acima se aplica depois de abrir/exportar uma cópia
+acessível do banco. Não edite o arquivo enquanto o app estiver aberto.
+
+Para mudar os dados pelo próprio código, prefira a camada existente
+`EducaGestao/services/armazenamento.js`: carregue os dados com `carregarDados`,
+altere a propriedade necessária e salve com `salvarDados`. Por exemplo:
+
+```js
+const dados = await carregarDados();
+dados.alunos[0].turma = '4º Ano B';
+await salvarDados(dados);
+```
+
+Use esse caminho em vez de reescrever `dados_json` manualmente quando puder: o
+app mantém fila de gravação e os parâmetros SQL protegem os dados contra erros
+de formatação. Como os dados ainda estão todos dentro de um JSON, para consultas
+e alterações frequentes por SQL é recomendável migrar cada entidade para tabelas
+próprias (por exemplo, `alunos`, `turmas` e `frequencias`).
+
 ## Privacidade e confiabilidade
 
 Como o sistema pode conter dados de crianças e adolescentes, uma versão de

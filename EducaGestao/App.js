@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { carregarDados, salvarDados } from './services/armazenamento';
 import { Cabecalho } from './components/Cabecalho';
@@ -13,8 +14,9 @@ import { Reservas } from './screens/Reservas';
 import { Cadastros } from './screens/Cadastros';
 import { Coordenacao } from './screens/Coordenacao';
 import { Relatorios } from './screens/Relatorios';
-import { styles, colors } from './styles';
+import { definirTema, styles, colors } from './styles';
 
+const CHAVE_TEMA = '@educagestao/tema-v1';
 const telasPorPerfil = {
   Professor: ['Painel', 'Planejamento', 'Frequência', 'Diário', 'Calendário', 'Reservas'],
   Coordenador: ['Painel', 'Coordenação', 'Planejamento', 'Frequência', 'Diário', 'Calendário', 'Reservas', 'Relatórios'],
@@ -28,6 +30,27 @@ export default function App() {
   const [tentativa, setTentativa] = useState(0);
   const [usuario, setUsuario] = useState(null);
   const [tela, setTela] = useState('Painel');
+  const [tema, setTema] = useState('light');
+  const [temaPronto, setTemaPronto] = useState(false);
+  const [erroPreferencia, setErroPreferencia] = useState(null);
+
+  useEffect(() => {
+    let ativo = true;
+    AsyncStorage.getItem(CHAVE_TEMA)
+      .then((salvo) => {
+        if (!ativo) return;
+        const preferido = salvo === 'dark' ? 'dark' : 'light';
+        definirTema(preferido);
+        setTema(preferido);
+      })
+      .catch((erro) => {
+        if (ativo) setErroPreferencia(erro);
+      })
+      .finally(() => {
+        if (ativo) setTemaPronto(true);
+      });
+    return () => { ativo = false; };
+  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -45,7 +68,19 @@ export default function App() {
       .catch((erro) => setErroSalvamento(erro));
   }, [dados]);
 
-  if (!dados) {
+  const alternarTema = async () => {
+    const proximoTema = tema === 'dark' ? 'light' : 'dark';
+    definirTema(proximoTema);
+    setTema(proximoTema);
+    try {
+      await AsyncStorage.setItem(CHAVE_TEMA, proximoTema);
+      setErroPreferencia(null);
+    } catch (erro) {
+      setErroPreferencia(erro);
+    }
+  };
+
+  if (!dados || !temaPronto) {
     return (
       <SafeAreaView style={styles.loading}>
         {erroBanco ? (
@@ -67,7 +102,12 @@ export default function App() {
   }
 
   if (!usuario) {
-    return <Login onEntrar={(perfil) => { setUsuario(perfil); setTela('Painel'); }} />;
+    return <Login
+      onEntrar={(perfil) => { setUsuario(perfil); setTela('Painel'); }}
+      tema={tema}
+      onAlternarTema={alternarTema}
+      erroPreferencia={erroPreferencia}
+    />;
   }
 
   const atualizar = (chave, transformacao) => {
@@ -95,11 +135,12 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.app}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.canvas} />
+      <StatusBar barStyle={tema === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.canvas} />
       <View style={styles.shell}>
-        <Cabecalho usuario={usuario} onSair={sair} />
+        <Cabecalho usuario={usuario} onSair={sair} tema={tema} onAlternarTema={alternarTema} />
         <Menu telas={telasPorPerfil[usuario.perfil] || telasPorPerfil.Professor} ativa={tela} onSelecionar={setTela} />
         {erroSalvamento && <Text accessibilityRole="alert" style={{ color: colors.red, paddingHorizontal: 22, paddingTop: 12 }}>Não foi possível salvar neste dispositivo: {erroSalvamento.message}</Text>}
+        {erroPreferencia && <Text accessibilityRole="alert" style={{ color: colors.red, paddingHorizontal: 22, paddingTop: 12 }}>Não foi possível salvar a preferência de tema: {erroPreferencia.message}</Text>}
         <ScrollView style={styles.pageScroll} contentContainerStyle={styles.pageContent} keyboardShouldPersistTaps="handled">
           {conteudo}
           <Text style={styles.footer}>EducaGestão · Dados locais neste dispositivo · Ambiente demonstrativo</Text>

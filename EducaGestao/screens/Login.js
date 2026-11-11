@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { colors, styles } from '../styles';
 
 const perfis = [
@@ -8,20 +8,25 @@ const perfis = [
   { perfil: 'Gestor', nome: 'Paulo Ribeiro', email: 'gestor@educagestao.demo', iniciais: 'PR' },
 ];
 
-export function Login({ onEntrar }) {
+export function Login({ onEntrar, tema, onAlternarTema, erroPreferencia }) {
   const [email, setEmail] = useState(perfis[0].email);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [selecionado, setSelecionado] = useState(perfis[0]);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <StatusBar barStyle={tema === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.canvas} />
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 22 }} keyboardShouldPersistTaps="handled">
         <View style={{ width: '100%', maxWidth: 440, alignSelf: 'center' }}>
-          <View style={{ backgroundColor: colors.ink, borderRadius: 16, padding: 25, marginBottom: 18 }}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Ativar tema ${tema === 'dark' ? 'claro' : 'escuro'}`} onPress={onAlternarTema} style={{ alignSelf: 'flex-end', padding: 10, marginBottom: 8 }}>
+            <Text style={{ color: colors.blue, fontWeight: '700', fontSize: 12 }}>{tema === 'dark' ? '☀ Ativar tema claro' : '☾ Ativar tema escuro'}</Text>
+          </TouchableOpacity>
+          <View style={{ backgroundColor: '#172B4D', borderRadius: 16, padding: 25, marginBottom: 18 }}>
             <Text style={{ color: '#9CCAFF', fontSize: 12, fontWeight: '700' }}>GESTÃO ESCOLAR INTEGRADA</Text>
-            <Text style={{ color: colors.white, fontSize: 29, fontWeight: '900', marginTop: 9 }}>EducaGestão</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 29, fontWeight: '900', marginTop: 9 }}>EducaGestão</Text>
             <Text style={{ color: '#D5E1F2', fontSize: 13, marginTop: 6 }}>Rotina pedagógica em um só lugar.</Text>
           </View>
           <View style={styles.card}>
+            {erroPreferencia && <Text accessibilityRole="alert" style={{ color: colors.red, fontSize: 12, marginBottom: 8 }}>Não foi possível salvar a preferência de tema: {erroPreferencia.message}</Text>}
             <Text style={{ color: colors.ink, fontSize: 19, fontWeight: '800' }}>Acessar ambiente</Text>
             <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, marginBottom: 10 }}>Escolha um perfil de demonstração para continuar.</Text>
             {perfis.map((perfil) => (
