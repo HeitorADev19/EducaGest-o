@@ -140,7 +140,10 @@ automatizar, decisões pedagógicas ou disciplinares.
 ## Estado atual
 
 O protótipo já oferece painel, cadastros, planejamentos, frequência, diário,
-calendário, reservas, coordenação e relatórios com dados demonstrativos locais.
+calendário escolar e agenda cronológica dos horários de aula dos professores,
+reservas, coordenação e relatórios com dados demonstrativos locais. O calendário
+exibe aulas de todos os professores em uma grade mensal, com cores por docente,
+filtro e detalhes dos horários do dia selecionado.
 Notas, advertências, relatórios exportáveis, integração com o SYSEDU.BR,
 autenticação e sincronização entre dispositivos ainda precisam ser
 implementados.
