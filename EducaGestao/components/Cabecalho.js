@@ -10,7 +10,7 @@ export function Cabecalho({ usuario, onSair, tema, onAlternarTema }) {
         </View>
         <View>
           <Text style={{ color: colors.ink, fontSize: 16, fontWeight: '800' }}>EducaGestão</Text>
-          <Text style={{ color: colors.muted, fontSize: 10 }}>EMEF Caminhos do Saber</Text>
+          <Text style={{ color: colors.muted, fontSize: 10 }}>Nome da Escola</Text>
         </View>
       </View>
       <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Ativar tema ${tema === 'dark' ? 'claro' : 'escuro'}`} onPress={onAlternarTema} style={{ padding: 8 }}>
