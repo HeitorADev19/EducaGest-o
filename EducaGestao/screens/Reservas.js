@@ -3,6 +3,7 @@ import { Alert, Text, View } from 'react-native';
 import { CampoTexto } from '../components/CampoTexto';
 import { Botao } from '../components/Botao';
 import { ItemSolicitacao } from '../components/ItemSolicitacao';
+import { SeletorTurma } from '../components/SeletorTurma';
 import { styles, colors } from '../styles';
 
 export function Reservas({ dados, usuario, atualizar }) {
@@ -28,7 +29,7 @@ export function Reservas({ dados, usuario, atualizar }) {
         <View style={styles.wrap}>{dados.recursos.map((item) => <Text key={item} onPress={() => setRecurso(item)} style={[styles.chip, { color: recurso === item ? colors.blue : colors.muted }]}>{item}</Text>)}</View>
         <CampoTexto label="Data (AAAA-MM-DD)" value={data} onChangeText={setData} placeholder="2026-11-12" />
         <CampoTexto label="Horário" value={horario} onChangeText={setHorario} placeholder="09:00" />
-        <CampoTexto label="Turma" value={turma} onChangeText={setTurma} />
+        <SeletorTurma turmas={dados.turmas} value={turma} onChange={setTurma} />
         <CampoTexto label="Finalidade" value={finalidade} onChangeText={setFinalidade} multiline />
         <View style={{ marginTop: 12 }}><Botao titulo="Solicitar recurso" onPress={solicitar} /></View>
       </View>}

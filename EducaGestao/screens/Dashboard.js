@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import { Card } from '../components/Card';
+import { SecaoRecolhivel } from '../components/SecaoRecolhivel';
 import { styles, colors } from '../styles';
 
 export function Dashboard({ dados, usuario, onIrPara }) {
@@ -8,6 +9,7 @@ export function Dashboard({ dados, usuario, onIrPara }) {
   const frequencia = presencas.length ? Math.round((presencas.filter((registro) => registro.presente).length / presencas.length) * 100) : 0;
   const planosPendentes = dados.planejamentos.filter((plano) => plano.status === 'Pendente' || plano.status === 'Enviado').length;
   const proximos = [...dados.eventos].sort((a, b) => a.data.localeCompare(b.data)).slice(0, 3);
+  const turmas = [...dados.turmas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true }));
   const metricas = [
     ['Alunos matriculados', alunos, 'cadastros fictícios', colors.blue],
     ['Professores', dados.professores.length, 'equipe escolar', colors.teal],
@@ -22,12 +24,13 @@ export function Dashboard({ dados, usuario, onIrPara }) {
       <Text style={styles.subheading}>Acompanhe o movimento pedagógico da EMEF Caminhos do Saber.</Text>
       <View style={styles.wrap}>{metricas.map(([titulo, valor, detalhe, cor]) => <Card key={titulo} titulo={titulo} valor={valor} detalhe={detalhe} cor={cor} />)}</View>
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Ritmo pedagógico</Text>
-        {dados.turmas.map((turma) => {
-          const planos = dados.planejamentos.filter((plano) => plano.turma === turma.nome);
-          const percentual = planos.length ? Math.round((planos.filter((plano) => plano.status === 'Aprovado').length / planos.length) * 100) : 0;
-          return <View key={turma.id} style={{ marginTop: 13 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text style={{ color: colors.ink, fontSize: 12, fontWeight: '700' }}>{turma.nome}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{percentual}% aprovados</Text></View><View style={{ height: 7, borderRadius: 5, backgroundColor: colors.canvas, marginTop: 7 }}><View style={{ width: `${percentual}%`, height: 7, borderRadius: 5, backgroundColor: colors.blue }} /></View></View>;
-        })}
+        <SecaoRecolhivel titulo="Ritmo pedagógico" resumo={`${turmas.length} turmas`}>
+          {turmas.map((turma) => {
+            const planos = dados.planejamentos.filter((plano) => plano.turma === turma.nome);
+            const percentual = planos.length ? Math.round((planos.filter((plano) => plano.status === 'Aprovado').length / planos.length) * 100) : 0;
+            return <View key={turma.id} style={{ marginTop: 13 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text style={{ color: colors.ink, fontSize: 12, fontWeight: '700' }}>{turma.nome} · {turma.turno || 'Manhã'}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{percentual}% aprovados</Text></View><View style={{ height: 7, borderRadius: 5, backgroundColor: colors.canvas, marginTop: 7 }}><View style={{ width: `${percentual}%`, height: 7, borderRadius: 5, backgroundColor: colors.blue }} /></View></View>;
+          })}
+        </SecaoRecolhivel>
       </View>
       <Text style={styles.sectionTitle}>Acesso rápido</Text>
       <View style={styles.wrap}>{[['Novo planejamento', 'Planejamento'], ['Registrar chamada', 'Frequência'], ['Solicitar recurso', 'Reservas']].map(([label, destino]) => <Text key={destino} onPress={() => onIrPara(destino)} style={{ color: colors.blue, fontWeight: '700', padding: 12, marginRight: 8, marginBottom: 8, backgroundColor: colors.blueLight, borderRadius: 8 }}>{label}  →</Text>)}</View>

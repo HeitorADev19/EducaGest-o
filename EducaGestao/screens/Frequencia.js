@@ -3,6 +3,7 @@ import { Alert, FlatList, Text, View } from 'react-native';
 import { CampoTexto } from '../components/CampoTexto';
 import { Botao } from '../components/Botao';
 import { ItemAluno } from '../components/ItemAluno';
+import { SeletorTurma } from '../components/SeletorTurma';
 import { styles, colors } from '../styles';
 
 export function Frequencia({ dados, usuario, atualizar }) {
@@ -25,7 +26,7 @@ export function Frequencia({ dados, usuario, atualizar }) {
       <Text style={styles.heading}>Frequência dos alunos</Text><Text style={styles.subheading}>Registre presença e consulte as chamadas salvas.</Text>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Nova chamada</Text>
-        <View style={styles.wrap}>{dados.turmas.map((item) => <Text key={item.id} onPress={() => setTurma(item.nome)} style={[styles.chip, { color: turma === item.nome ? colors.blue : colors.muted }]}>{item.nome}</Text>)}</View>
+        <SeletorTurma turmas={dados.turmas} value={turma} onChange={setTurma} />
         <CampoTexto label="Data (AAAA-MM-DD)" value={data} onChangeText={setData} />
         <FlatList data={alunos} keyExtractor={(item) => item.id} scrollEnabled={false} renderItem={({ item }) => <ItemAluno aluno={item} presente={presencas[item.id] !== false} justificativa={justificativas[item.id]} onAlternar={() => alternar(item.id)} onJustificativa={() => solicitarJustificativa(item)} />} ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>Cadastre alunos para iniciar a chamada.</Text></View>} />
         <Botao titulo="Salvar chamada" onPress={salvar} />

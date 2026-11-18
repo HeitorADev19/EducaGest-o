@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { CampoTexto } from '../components/CampoTexto';
 import { Botao } from '../components/Botao';
+import { SeletorCompacto } from '../components/SeletorCompacto';
 import { styles, colors } from '../styles';
 
 export function DiarioClasse({ dados, usuario, atualizar }) {
@@ -9,6 +10,10 @@ export function DiarioClasse({ dados, usuario, atualizar }) {
   const [conteudo, setConteudo] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const planos = dados.planejamentos.filter((p) => usuario.perfil !== 'Professor' || p.professor === usuario.nome);
+  const opcoesPlano = [
+    { label: 'Selecione um planejamento', value: '' },
+    ...planos.map((plano) => ({ label: `${plano.data} · ${plano.turma} · ${plano.disciplina}`, value: plano.id })),
+  ];
   const salvar = (realizada) => {
     if (!planoId || !conteudo.trim()) return Alert.alert('Registro incompleto', 'Selecione um planejamento e informe o conteúdo ministrado.');
     const plano = planos.find((p) => p.id === planoId);
@@ -19,8 +24,7 @@ export function DiarioClasse({ dados, usuario, atualizar }) {
     <View>
       <Text style={styles.heading}>Diário de classe</Text><Text style={styles.subheading}>O planejamento é a intenção; o diário registra o que aconteceu.</Text>
       <View style={styles.card}><Text style={styles.sectionTitle}>Registrar aula</Text>
-        {planos.map((plano) => <Text key={plano.id} onPress={() => setPlanoId(plano.id)} style={[styles.chip, { color: planoId === plano.id ? colors.blue : colors.ink }]}>{plano.data} · {plano.turma} · {plano.disciplina}</Text>)}
-        {!planos.length && <Text style={styles.emptyText}>Ainda não há planejamentos disponíveis.</Text>}
+        {planos.length ? <SeletorCompacto label="Planejamento" value={planoId} opcoes={opcoesPlano} onChange={setPlanoId} /> : <Text style={styles.emptyText}>Ainda não há planejamentos disponíveis.</Text>}
         <CampoTexto label="Conteúdo ministrado" value={conteudo} onChangeText={setConteudo} multiline />
         <CampoTexto label="Observações" value={observacoes} onChangeText={setObservacoes} multiline />
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}><Botao titulo="Aula realizada" onPress={() => salvar(true)} /><Botao titulo="Não realizada" variante="secundario" onPress={() => salvar(false)} /></View>

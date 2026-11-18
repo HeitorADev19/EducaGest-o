@@ -142,8 +142,13 @@ automatizar, decisões pedagógicas ou disciplinares.
 O protótipo já oferece painel, cadastros, planejamentos, frequência, diário,
 calendário escolar e agenda cronológica dos horários de aula dos professores,
 reservas, coordenação e relatórios com dados demonstrativos locais. O calendário
-exibe aulas de todos os professores em uma grade mensal, com cores por docente,
-filtro e detalhes dos horários do dia selecionado.
+exibe aulas de todos os professores em uma grade mensal e em uma grade semanal
+recorrente, com cores por docente, filtros por ano, letra da turma, turno e
+professor e detalhes das aulas planejadas e recorrentes no dia selecionado. Há
+turmas A e B em ambos os turnos, com horários demonstrativos distintos para
+manhã e tarde, aulas distribuídas por todos os dias úteis e 18 professores.
+Cada turma também recebe seis alunos demonstrativos para permitir testar a
+chamada e a frequência.
 Notas, advertências, relatórios exportáveis, integração com o SYSEDU.BR,
 autenticação e sincronização entre dispositivos ainda precisam ser
 implementados.
