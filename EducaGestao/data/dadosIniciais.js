@@ -1,7 +1,7 @@
 import { decomporTurma } from '../utils/turmas';
 
 const hoje = new Date();
-export const VERSAO_DADOS_INICIAIS = 10;
+export const VERSAO_DADOS_INICIAIS = 11;
 const dataRelativa = (dias) => {
   const data = new Date(hoje);
   data.setDate(data.getDate() + dias);
@@ -89,6 +89,27 @@ const criarHorariosAula = () => Object.entries(horariosPorTurno).flatMap(([turno
   }));
 });
 
+const criarPlanejamentosCompletos = () => turmasIniciais.map((turma, indiceTurma) => {
+  const professor = professoresIniciais[indiceTurma % professoresIniciais.length];
+  const partes = decomporTurma(turma);
+  const status = indiceTurma % 3 === 0 ? 'Pendente' : indiceTurma % 3 === 1 ? 'Enviado' : 'Aprovado';
+  return {
+    id: `pl-completo-${turma.id}`,
+    professor: professor.nome,
+    turma: turma.nome,
+    disciplina: professor.disciplina,
+    data: dataRelativa(indiceTurma % 10 - 2),
+    horario: horariosPorTurno[turma.turno][indiceTurma % horariosPorTurno[turma.turno].length],
+    conteudo: `Conteúdos essenciais de ${professor.disciplina}`,
+    objetivos: `Desenvolver habilidades previstas para o ${partes.ano}º Ano em ${professor.disciplina}.`,
+    metodologia: 'Aula expositiva dialogada, atividade prática e acompanhamento coletivo.',
+    recursosDidaticos: turma.turno === 'Manhã' ? 'Quadro, caderno e projetor' : 'Quadro, caderno e materiais impressos',
+    sala: turma.turno === 'Manhã' ? 'Sala 5A' : 'Sala 4B',
+    observacoes: '',
+    status,
+  };
+});
+
 const alunosExistentes = [
   { id: 'a1', nome: 'Ana Beatriz Lima', matricula: 'EG-25001', turma: '5º Ano A' },
   { id: 'a2', nome: 'Bruno Henrique Alves', matricula: 'EG-25002', turma: '5º Ano A' },
@@ -146,6 +167,7 @@ export const criarDadosIniciais = () => ({
     { id: 'pl4', professor: 'Juliana Nascimento', turma: '4º Ano B', disciplina: 'História', data: dataRelativa(3), horario: '11:00', conteudo: 'Memórias da comunidade', objetivos: 'Reconhecer diferentes fontes de memória local.', metodologia: 'Roda de conversa e análise de fotografias.', recursosDidaticos: 'Fotografias e caderno', sala: 'Sala 4B', observacoes: '', status: 'Aprovado' },
     { id: 'pl5', professor: 'Pedro Henrique', turma: '5º Ano A', disciplina: 'Geografia', data: dataRelativa(5), horario: '13:30', conteudo: 'Paisagens e transformações', objetivos: 'Identificar mudanças nas paisagens ao longo do tempo.', metodologia: 'Observação de imagens e atividade em grupo.', recursosDidaticos: 'Mapas e imagens', sala: 'Sala 5A', observacoes: '', status: 'Aprovado' },
     { id: 'pl6', professor: 'Camila Torres', turma: '4º Ano B', disciplina: 'Arte', data: dataRelativa(7), horario: '14:00', conteudo: 'Cores e formas', objetivos: 'Experimentar composições com cores e formas geométricas.', metodologia: 'Criação artística individual e apreciação coletiva.', recursosDidaticos: 'Papel, lápis de cor e formas recortadas', sala: 'Sala 4B', observacoes: '', status: 'Aprovado' },
+    ...criarPlanejamentosCompletos(),
   ],
   horariosAula: criarHorariosAula(),
   frequencias: [], diario: [],

@@ -40,9 +40,9 @@ export function Calendario({ dados, usuario, atualizar }) {
   const [descricao, setDescricao] = useState('');
   const [reposicao, setReposicao] = useState({});
   const [professorFiltro, setProfessorFiltro] = useState('');
-  const [anoFiltro, setAnoFiltro] = useState('5');
-  const [secaoFiltro, setSecaoFiltro] = useState('A');
-  const [turnoFiltro, setTurnoFiltro] = useState('Manhã');
+  const [anoFiltro, setAnoFiltro] = useState('');
+  const [secaoFiltro, setSecaoFiltro] = useState('');
+  const [turnoFiltro, setTurnoFiltro] = useState('');
   const gestor = usuario.perfil === 'Gestor';
   const turmas = [...(dados.turmas || [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true }));
   const anos = [...new Set(turmas.map((turma) => decomporTurma(turma).ano))]
