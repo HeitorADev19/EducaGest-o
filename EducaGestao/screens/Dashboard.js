@@ -21,7 +21,7 @@ export function Dashboard({ dados, usuario, onIrPara }) {
   return (
     <View>
       <Text style={styles.heading}>Bom dia, {usuario.nome.split(' ')[0]}</Text>
-      <Text style={styles.subheading}>Acompanhe o movimento pedagógico da EMEF Caminhos do Saber.</Text>
+      <Text style={styles.subheading}>Acompanhe o movimento pedagógico da (Nome da Escola).</Text>
       <View style={styles.wrap}>{metricas.map(([titulo, valor, detalhe, cor]) => <Card key={titulo} titulo={titulo} valor={valor} detalhe={detalhe} cor={cor} />)}</View>
       <View style={styles.card}>
         <SecaoRecolhivel titulo="Ritmo pedagógico" resumo={`${turmas.length} turmas`}>
