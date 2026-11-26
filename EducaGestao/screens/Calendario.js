@@ -3,6 +3,7 @@ import { Alert, ScrollView, Text, TouchableOpacity, useWindowDimensions, View } 
 import { CampoTexto } from '../components/CampoTexto';
 import { Botao } from '../components/Botao';
 import { SeletorCompacto } from '../components/SeletorCompacto';
+import { SecaoRecolhivel } from '../components/SecaoRecolhivel';
 import { decomporTurma } from '../utils/turmas';
 import { styles, colors } from '../styles';
 
@@ -85,7 +86,8 @@ export function Calendario({ dados, usuario, atualizar }) {
     .filter((horario) => (!professorFiltro || horario.professor === professorFiltro)
       && correspondeTurma(horario.turma))
     .sort((a, b) => a.horario.localeCompare(b.horario) || a.diaSemana - b.diaSemana);
-  const faixasDeHorario = [...new Set(horariosSemana.map((horario) => horario.horario))].sort();
+  const horariosDaGrade = professorFiltro ? horariosSemana : [];
+  const faixasDeHorario = [...new Set(horariosDaGrade.map((horario) => horario.horario))].sort();
   const aulasPorData = aulas.reduce((grupos, aula) => {
     grupos[aula.data] = [...(grupos[aula.data] || []), aula];
     return grupos;
@@ -264,70 +266,81 @@ export function Calendario({ dados, usuario, atualizar }) {
           </View>
         </View>
       )) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhum planejamento específico para esta data, turma e professor.</Text></View>}
-      <Text style={styles.sectionTitle}>Horário recorrente · {diasDaSemanaLongos[numeroDiaSelecionado]} · {turnoFiltro || 'Todos os turnos'}</Text>
-      {horariosRecorrentesDoDia.length ? horariosRecorrentesDoDia.map((aula) => (
-        <View key={aula.id} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: coresPorProfessor[aula.professor] }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            <Text style={{ color: colors.blue, fontSize: 20, fontWeight: '800', width: 72 }}>{aula.horario}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '700' }}>{aula.disciplina} · {aula.turma}</Text>
-              <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>{aula.professor}</Text>
-            </View>
-          </View>
-          {gestor && (horarioEditando === aula.id ? (
-            <View style={{ marginTop: 10 }}>
-              <CampoTexto label="Novo horário (HH:MM)" value={novoHorario} onChangeText={setNovoHorario} placeholder="08:30" />
-              <View style={{ marginTop: 8 }}><Botao titulo="Salvar horário" compact onPress={() => salvarHorario(aula)} /></View>
-              <TouchableOpacity accessibilityRole="button" onPress={() => { setHorarioEditando(null); setNovoHorario(''); }} style={{ alignItems: 'center', padding: 8 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Cancelar</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Editar horário de ${aula.disciplina}, ${aula.turma}`} onPress={() => { setHorarioEditando(aula.id); setNovoHorario(aula.horario); }} style={{ alignSelf: 'flex-end', paddingHorizontal: 8, paddingVertical: 6 }}>
-              <Text style={{ color: colors.blue, fontSize: 12, fontWeight: '700' }}>Editar horário</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhuma aula recorrente para esta data e este filtro.</Text></View>}
-      <Text style={styles.sectionTitle}>Horário semanal recorrente · {turnoFiltro || 'Todos os turnos'}</Text>
-      <Text style={[styles.subheading, { marginBottom: 10 }]}>Grade de demonstração por dia da semana, turma e horário.</Text>
-      {horariosSemana.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator>
-          <View style={styles.card}>
-            <View style={{ flexDirection: 'row' }}>
-              <View style={{ width: 64, justifyContent: 'center', padding: 6, borderBottomWidth: 1, borderColor: colors.line }}>
-                <Text style={{ color: colors.muted, fontSize: 10, fontWeight: '700' }}>Hora</Text>
+      <SecaoRecolhivel
+        titulo={`Horário recorrente · ${diasDaSemanaLongos[numeroDiaSelecionado]} · ${turnoFiltro || 'Todos os turnos'}`}
+        resumo={professorFiltro || 'Selecione um professor no filtro acima'}
+      >
+        {!professorFiltro ? (
+          <View style={styles.empty}><Text style={styles.emptyText}>Escolha um professor no filtro do calendário para consultar os horários recorrentes.</Text></View>
+        ) : horariosRecorrentesDoDia.length ? horariosRecorrentesDoDia.map((aula) => (
+          <View key={aula.id} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: coresPorProfessor[aula.professor] }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Text style={{ color: colors.blue, fontSize: 20, fontWeight: '800', width: 72 }}>{aula.horario}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '700' }}>{aula.disciplina} · {aula.turma}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>{aula.professor}</Text>
               </View>
-              {diasLetivos.map(({ dia }) => (
-                <View key={dia} style={{ width: 120, justifyContent: 'center', alignItems: 'center', padding: 6, borderBottomWidth: 1, borderColor: colors.line }}>
-                  <Text style={{ color: colors.ink, fontSize: 11, fontWeight: '700' }}>{dia}</Text>
+            </View>
+            {gestor && (horarioEditando === aula.id ? (
+              <View style={{ marginTop: 10 }}>
+                <CampoTexto label="Novo horário (HH:MM)" value={novoHorario} onChangeText={setNovoHorario} placeholder="08:30" />
+                <View style={{ marginTop: 8 }}><Botao titulo="Salvar horário" compact onPress={() => salvarHorario(aula)} /></View>
+                <TouchableOpacity accessibilityRole="button" onPress={() => { setHorarioEditando(null); setNovoHorario(''); }} style={{ alignItems: 'center', padding: 8 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Editar horário de ${aula.disciplina}, ${aula.turma}`} onPress={() => { setHorarioEditando(aula.id); setNovoHorario(aula.horario); }} style={{ alignSelf: 'flex-end', paddingHorizontal: 8, paddingVertical: 6 }}>
+                <Text style={{ color: colors.blue, fontSize: 12, fontWeight: '700' }}>Editar horário</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhuma aula recorrente para esta data e este filtro.</Text></View>}
+      </SecaoRecolhivel>
+      <SecaoRecolhivel
+        titulo={`Horário semanal recorrente · ${turnoFiltro || 'Todos os turnos'}`}
+        resumo={professorFiltro || 'Selecione um professor no filtro acima para visualizar a grade'}
+      >
+        {!professorFiltro ? (
+          <View style={styles.empty}><Text style={styles.emptyText}>Escolha um professor no filtro do calendário para ver somente os horários recorrentes dele.</Text></View>
+        ) : horariosDaGrade.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator>
+            <View style={styles.card}>
+              <View style={{ flexDirection: 'row' }}>
+                <View style={{ width: 64, justifyContent: 'center', padding: 6, borderBottomWidth: 1, borderColor: colors.line }}>
+                  <Text style={{ color: colors.muted, fontSize: 10, fontWeight: '700' }}>Hora</Text>
+                </View>
+                {diasLetivos.map(({ dia }) => (
+                  <View key={dia} style={{ width: 120, justifyContent: 'center', alignItems: 'center', padding: 6, borderBottomWidth: 1, borderColor: colors.line }}>
+                    <Text style={{ color: colors.ink, fontSize: 11, fontWeight: '700' }}>{dia}</Text>
+                  </View>
+                ))}
+              </View>
+              {faixasDeHorario.map((horario) => (
+                <View key={horario} style={{ flexDirection: 'row' }}>
+                  <View style={{ width: 64, justifyContent: 'center', padding: 6, borderBottomWidth: 1, borderColor: colors.line }}>
+                    <Text style={{ color: colors.blue, fontSize: 12, fontWeight: '800' }}>{horario}</Text>
+                  </View>
+                  {diasLetivos.map(({ dia, numero }) => {
+                    const aulasDaFaixa = horariosDaGrade.filter((aula) => aula.diaSemana === numero && aula.horario === horario);
+                    return (
+                      <View key={dia} style={{ width: 120, minHeight: 76, justifyContent: 'center', padding: 4, borderLeftWidth: 1, borderBottomWidth: 1, borderColor: colors.line }}>
+                        {aulasDaFaixa.length ? aulasDaFaixa.map((aula) => (
+                          <View key={aula.id} style={{ backgroundColor: colors.canvas, borderLeftWidth: 3, borderLeftColor: coresPorProfessor[aula.professor], borderRadius: 5, padding: 5, marginVertical: 2 }}>
+                            <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 10, fontWeight: '700' }}>{aula.disciplina}</Text>
+                            <Text style={{ color: colors.muted, fontSize: 9 }}>{aula.turma}</Text>
+                            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 9 }}>{aula.professor}</Text>
+                          </View>
+                        )) : <Text style={{ color: colors.muted, fontSize: 10, textAlign: 'center' }}>—</Text>}
+                      </View>
+                    );
+                  })}
                 </View>
               ))}
             </View>
-            {faixasDeHorario.map((horario) => (
-              <View key={horario} style={{ flexDirection: 'row' }}>
-                <View style={{ width: 64, justifyContent: 'center', padding: 6, borderBottomWidth: 1, borderColor: colors.line }}>
-                  <Text style={{ color: colors.blue, fontSize: 12, fontWeight: '800' }}>{horario}</Text>
-                </View>
-                {diasLetivos.map(({ dia, numero }) => {
-                  const aulasDaFaixa = horariosSemana.filter((aula) => aula.diaSemana === numero && aula.horario === horario);
-                  return (
-                    <View key={dia} style={{ width: 120, minHeight: 76, justifyContent: 'center', padding: 4, borderLeftWidth: 1, borderBottomWidth: 1, borderColor: colors.line }}>
-                      {aulasDaFaixa.length ? aulasDaFaixa.map((aula) => (
-                        <View key={aula.id} style={{ backgroundColor: colors.canvas, borderLeftWidth: 3, borderLeftColor: coresPorProfessor[aula.professor], borderRadius: 5, padding: 5, marginVertical: 2 }}>
-                          <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 10, fontWeight: '700' }}>{aula.disciplina}</Text>
-                          <Text style={{ color: colors.muted, fontSize: 9 }}>{aula.turma}</Text>
-                          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 9 }}>{aula.professor}</Text>
-                        </View>
-                      )) : <Text style={{ color: colors.muted, fontSize: 10, textAlign: 'center' }}>—</Text>}
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      ) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhum horário semanal para este professor.</Text></View>}
+          </ScrollView>
+        ) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhum horário semanal para este professor e os filtros selecionados.</Text></View>}
+      </SecaoRecolhivel>
       {gestor && <View style={styles.card}>
         <Text style={styles.sectionTitle}>Adicionar aula recorrente</Text>
         <SeletorCompacto label="Turma" value={novaAula.turma} opcoes={opcoesTurmaAula} placeholder="Selecione a turma" onChange={(turma) => setNovaAula((atual) => ({ ...atual, turma }))} />
