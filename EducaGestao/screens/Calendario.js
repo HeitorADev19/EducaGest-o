@@ -39,6 +39,9 @@ export function Calendario({ dados, usuario, atualizar }) {
   const [tipo, setTipo] = useState('Evento');
   const [descricao, setDescricao] = useState('');
   const [reposicao, setReposicao] = useState({});
+  const [horarioEditando, setHorarioEditando] = useState(null);
+  const [novoHorario, setNovoHorario] = useState('');
+  const [novaAula, setNovaAula] = useState({ turma: '', professor: '', diaSemana: 5, horario: '' });
   const [professorFiltro, setProfessorFiltro] = useState('');
   const [anoFiltro, setAnoFiltro] = useState('');
   const [secaoFiltro, setSecaoFiltro] = useState('');
@@ -70,6 +73,9 @@ export function Calendario({ dados, usuario, atualizar }) {
     ...(dados.horariosAula || []).map((horario) => horario.professor),
   ])].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const opcoesProfessor = [{ label: 'Todos os professores', value: '' }, ...professores.map((nome) => ({ label: nome, value: nome }))];
+  const opcoesProfessorAula = [{ label: 'Selecione um professor', value: '' }, ...professores.map((nome) => ({ label: nome, value: nome }))];
+  const opcoesTurmaAula = turmas.map((turma) => ({ label: `${turma.nome} · ${turma.turno || decomporTurma(turma).turno}`, value: turma.nome }));
+  const opcoesDiaAula = diasDaSemanaLongos.slice(1, 6).map((dia, indice) => ({ label: dia, value: indice + 1 }));
   const coresPorProfessor = Object.fromEntries(professores.map((nome, indice) => [nome, coresProfessores[indice % coresProfessores.length]]));
   const aulas = dados.planejamentos
     .filter((plano) => (!professorFiltro || plano.professor === professorFiltro)
@@ -118,6 +124,52 @@ export function Calendario({ dados, usuario, atualizar }) {
     atualizar('planejamentos', (lista) => lista.map((p) => p.id === plano.id ? { ...p, rescheduled: novaData } : p));
     atualizar('eventos', (lista) => [{ id: `rep-${Date.now()}`, titulo: `Reposição · ${plano.turma} · ${plano.disciplina}`, data: novaData, tipo: 'Reposição', descricao: `Reposição da aula suspensa em ${evento.data}.`, planejamentoId: plano.id }, ...lista]);
     Alert.alert('Reposição vinculada', 'O planejamento original foi preservado e a nova data foi incluída no calendário.');
+  };
+  const salvarHorario = (aula) => {
+    const horario = novoHorario.trim();
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(horario)) {
+      return Alert.alert('Horário inválido', 'Informe o horário no formato HH:MM, por exemplo 08:30.');
+    }
+    const conflito = (dados.horariosAula || []).find((item) => (
+      item.id !== aula.id
+      && item.diaSemana === aula.diaSemana
+      && item.horario === horario
+      && (item.turma === aula.turma || item.professor === aula.professor)
+    ));
+    if (conflito) return Alert.alert('Colisão de aula', 'A turma ou o professor já tem uma aula nesse horário neste dia.');
+    atualizar('horariosAula', (lista) => lista.map((item) => item.id === aula.id ? { ...item, horario } : item));
+    setHorarioEditando(null);
+    setNovoHorario('');
+    Alert.alert('Horário atualizado', 'O horário recorrente da aula foi alterado.');
+  };
+  const adicionarAula = () => {
+    const horario = novaAula.horario.trim();
+    if (!novaAula.turma || !novaAula.professor || !novaAula.diaSemana || !horario) {
+      return Alert.alert('Campos obrigatórios', 'Selecione a turma, o professor e o dia, e informe o horário.');
+    }
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(horario)) {
+      return Alert.alert('Horário inválido', 'Informe o horário no formato HH:MM, por exemplo 08:30.');
+    }
+    const disciplina = dados.professores.find((professor) => professor.nome === novaAula.professor)?.disciplina
+      || (dados.horariosAula || []).find((aula) => aula.professor === novaAula.professor)?.disciplina
+      || dados.planejamentos.find((plano) => plano.professor === novaAula.professor)?.disciplina;
+    if (!disciplina) return Alert.alert('Disciplina não cadastrada', 'Cadastre a disciplina principal desse professor antes de adicionar a aula.');
+    const conflito = (dados.horariosAula || []).find((item) => (
+      item.diaSemana === novaAula.diaSemana
+      && item.horario === horario
+      && (item.turma === novaAula.turma || item.professor === novaAula.professor)
+    ));
+    if (conflito) return Alert.alert('Colisão de aula', 'A turma ou o professor já tem uma aula nesse dia e horário.');
+    const turmaSelecionada = turmas.find((turma) => turma.nome === novaAula.turma);
+    atualizar('horariosAula', (lista) => [{
+      id: `ha-${Date.now()}`,
+      ...novaAula,
+      disciplina,
+      horario,
+      turno: turmaSelecionada?.turno || 'Manhã',
+    }, ...lista]);
+    setNovaAula((atual) => ({ ...atual, horario: '' }));
+    Alert.alert('Aula adicionada', 'A aula foi incluída no horário semanal recorrente.');
   };
   const eventos = [...dados.eventos].sort((a, b) => a.data.localeCompare(b.data));
 
@@ -222,6 +274,19 @@ export function Calendario({ dados, usuario, atualizar }) {
               <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>{aula.professor}</Text>
             </View>
           </View>
+          {gestor && (horarioEditando === aula.id ? (
+            <View style={{ marginTop: 10 }}>
+              <CampoTexto label="Novo horário (HH:MM)" value={novoHorario} onChangeText={setNovoHorario} placeholder="08:30" />
+              <View style={{ marginTop: 8 }}><Botao titulo="Salvar horário" compact onPress={() => salvarHorario(aula)} /></View>
+              <TouchableOpacity accessibilityRole="button" onPress={() => { setHorarioEditando(null); setNovoHorario(''); }} style={{ alignItems: 'center', padding: 8 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Editar horário de ${aula.disciplina}, ${aula.turma}`} onPress={() => { setHorarioEditando(aula.id); setNovoHorario(aula.horario); }} style={{ alignSelf: 'flex-end', paddingHorizontal: 8, paddingVertical: 6 }}>
+              <Text style={{ color: colors.blue, fontSize: 12, fontWeight: '700' }}>Editar horário</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhuma aula recorrente para esta data e este filtro.</Text></View>}
       <Text style={styles.sectionTitle}>Horário semanal recorrente · {turnoFiltro || 'Todos os turnos'}</Text>
@@ -263,6 +328,18 @@ export function Calendario({ dados, usuario, atualizar }) {
           </View>
         </ScrollView>
       ) : <View style={styles.empty}><Text style={styles.emptyText}>Nenhum horário semanal para este professor.</Text></View>}
+      {gestor && <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Adicionar aula recorrente</Text>
+        <SeletorCompacto label="Turma" value={novaAula.turma} opcoes={opcoesTurmaAula} placeholder="Selecione a turma" onChange={(turma) => setNovaAula((atual) => ({ ...atual, turma }))} />
+        {novaAula.turma && <>
+          <SeletorCompacto label="Professor" value={novaAula.professor} opcoes={opcoesProfessorAula} onChange={(professor) => setNovaAula((atual) => ({ ...atual, professor }))} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}><SeletorCompacto label="Dia" value={novaAula.diaSemana} opcoes={opcoesDiaAula} onChange={(diaSemana) => setNovaAula((atual) => ({ ...atual, diaSemana }))} /></View>
+            <View style={{ flex: 1 }}><CampoTexto label="Horário" value={novaAula.horario} onChangeText={(horario) => setNovaAula((atual) => ({ ...atual, horario }))} placeholder="08:30" /></View>
+          </View>
+          <View style={{ marginTop: 12 }}><Botao titulo="Adicionar aula" onPress={adicionarAula} /></View>
+        </>}
+      </View>}
       {gestor && <View style={styles.card}><Text style={styles.sectionTitle}>Novo evento</Text>
         <View style={styles.wrap}>{tipos.map((item) => <Text key={item} onPress={() => setTipo(item)} style={[styles.chip, { color: tipo === item ? colors.blue : colors.muted }]}>{item}</Text>)}</View>
         <CampoTexto label="Título" value={titulo} onChangeText={setTitulo} placeholder="Ex.: Paralisação municipal" />
